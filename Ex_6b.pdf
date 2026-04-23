@@ -1,0 +1,536 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 4795
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 801.8899999999999864 Td
+(Code Cell:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0. 0.588 rg
+30. 789.8899999999999864 Td
+(!pip install datasets pandas matplotlib pyarrow transformers -q) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 764.8899999999999864 Td
+(Code Cell:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0. 0.588 rg
+30. 752.8899999999999864 Td
+(import re) Tj
+T* (import pandas as pd) Tj
+T* (import matplotlib.pyplot as plt) Tj
+T* (from datasets import load_dataset) Tj
+T* (from transformers import pipeline) Tj
+T* () Tj
+T* (# Load dataset) Tj
+T* (dataset = load_dataset\("gsm8k", "main"\)) Tj
+T* (samples = dataset["test"].select\(range\(5\)\)) Tj
+T* () Tj
+T* (print\("Number of questions selected:", len\(samples\)\)) Tj
+T* (print\("\\nFirst sample:\\n", samples[0]\)) Tj
+T* () Tj
+T* (# Load model) Tj
+T* (generator = pipeline\() Tj
+T* (    "text-generation",) Tj
+T* (    model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",) Tj
+T* (    device_map="auto") Tj
+T* (\)) Tj
+T* () Tj
+T* (print\("Model loaded successfully."\)) Tj
+T* () Tj
+T* (# Prompt templates) Tj
+T* (def zero_shot_prompt\(question\):) Tj
+T* (    return f"""Solve the following math problem.) Tj
+T* (Give only the final answer.) Tj
+T* () Tj
+T* (Question: {question}) Tj
+T* (Answer:""") Tj
+T* () Tj
+T* (def few_shot_prompt\(question\):) Tj
+T* (    return f"""Solve the following math problems.) Tj
+T* () Tj
+T* (Example 1:) Tj
+T* (Question: Ravi has 3 apples and buys 2 more. How many apples does he have?) Tj
+T* (Answer: 5) Tj
+T* () Tj
+T* (Example 2:) Tj
+T* (Question: There are 4 pencils in one box. If there are 3 boxes, how many pencils are there?) Tj
+T* (Answer: 12) Tj
+T* () Tj
+T* (Now solve:) Tj
+T* (Question: {question}) Tj
+T* (Answer:""") Tj
+T* () Tj
+T* (def cot_prompt\(question\):) Tj
+T* (    return f"""Solve the following math problem step by step.) Tj
+T* (Then give the final answer clearly.) Tj
+T* () Tj
+T* (Question: {question}) Tj
+T* (Solution:""") Tj
+T* () Tj
+T* (# Generate response) Tj
+T* (def get_response\(prompt\):) Tj
+T* (    output = generator\() Tj
+T* (        prompt,) Tj
+T* (        max_new_tokens=128,) Tj
+T* (        do_sample=False,   # deterministic) Tj
+T* (        pad_token_id=generator.tokenizer.eos_token_id,) Tj
+T* (        return_full_text=False  # FIX: cleaner output) Tj
+T* (    \)) Tj
+T* (    return output[0]["generated_text"].strip\(\)) Tj
+T* () Tj
+T* (# Extract number) Tj
+T* (def extract_number\(text\):) Tj
+T* (    if text is None:) Tj
+T* (        return None) Tj
+T* (    numbers = re.findall\(r'-?\\d+\\.?\\d*', text.replace\(",", ""\)\)) Tj
+T* (    return numbers[-1] if numbers else None) Tj
+T* () Tj
+T* (# Run experiment) Tj
+T* (results = []) Tj
+T* () Tj
+T* (for i, sample in enumerate\(samples\):) Tj
+T* (    question = sample["question"]) Tj
+T* (    true_answer_text = sample["answer"]) Tj
+T* (    true_answer = extract_number\(true_answer_text\)) Tj
+T* () Tj
+T* (    for prompt_type, prompt_func in [) Tj
+T* (        \("Zero-shot", zero_shot_prompt\),) Tj
+T* (        \("Few-shot", few_shot_prompt\),) Tj
+T* (        \("Chain-of-Thought", cot_prompt\)) Tj
+T* (    ]:) Tj
+T* (        prompt = prompt_func\(question\)) Tj
+T* (        response = get_response\(prompt\)) Tj
+T* (        pred = extract_number\(response\)) Tj
+T* () Tj
+T* (        results.append\({) Tj
+T* (            "id": i,) Tj
+T* (            "question": question,) Tj
+T* (            "prompt_type": prompt_type,) Tj
+T* (            "model_response": response,) Tj
+T* (            "true_answer": true_answer,) Tj
+T* (            "predicted_answer": pred) Tj
+T* (        }\)) Tj
+T* () Tj
+T* (print\("Experiment completed."\)) Tj
+T* () Tj
+T* (# DataFrame) Tj
+T* (df = pd.DataFrame\(results\)) Tj
+T* () Tj
+T* (# Convert to numeric for accurate comparison) Tj
+T* (df["true_answer"] = pd.to_numeric\(df["true_answer"], errors="coerce"\)) Tj
+T* (df["predicted_answer"] = pd.to_numeric\(df["predicted_answer"], errors="coerce"\)) Tj
+T* () Tj
+T* (# Accuracy check) Tj
+T* (df["is_correct"] = df["true_answer"] == df["predicted_answer"]) Tj
+T* () Tj
+T* (print\(df[["id", "prompt_type", "true_answer", "predicted_answer", "is_correct"]]\)) Tj
+T* () Tj
+T* (# Accuracy table) Tj
+T* (accuracy_table = df.groupby\("prompt_type"\)["is_correct"].mean\(\) * 100) Tj
+T* (accuracy_table = accuracy_table.reset_index\(\)) Tj
+T* (accuracy_table.columns = ["Prompt Type", "Accuracy \(%\)"]) Tj
+T* () Tj
+T* (print\("\\nAccuracy Table:\\n", accuracy_table\)) Tj
+T* () Tj
+T* (# Plot) Tj
+T* (plt.figure\(figsize=\(8, 5\)\)) Tj
+T* (plt.bar\(accuracy_table["Prompt Type"], accuracy_table["Accuracy \(%\)"]\)) Tj
+T* (plt.xlabel\("Prompt Type"\)) Tj
+T* (plt.ylabel\("Accuracy \(%\)"\)) Tj
+T* (plt.title\("Accuracy Comparison of Prompting Techniques"\)) Tj
+T* (plt.show\(\)) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 6 0 R
+>>
+endobj
+6 0 obj
+<<
+/Length 7432
+>>
+stream
+0.200025 w
+0 G
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 811.8899999999999864 Td
+(Output:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0.502 0. rg
+30. 799.8899999999999864 Td
+(Number of questions selected: 5) Tj
+T* () Tj
+T* (First sample:) Tj
+T* ( {'question': "Janet’s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She) Tj
+T* (sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?",) Tj
+T* ('answer': 'Janet sells 16 - 3 - 4 = <<16-3-4=9>>9 duck eggs a day.\\nShe makes 9 * 2 = $<<9*2=18>>18 every day at the farmer’s market.\\n#### 18'}) Tj
+T* () Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 729.8899999999999864 Td
+(Output:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0.502 0. rg
+30. 717.8899999999999864 Td
+(The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.) Tj
+T* (Passing `generation_config` together with generation-related arguments=\({'pad_token_id', 'do_sample', 'max_new_tokens'}\) is deprecated and will be) Tj
+T* (removed in future versions. Please pass either a `generation_config` object OR all generation parameters explicitly, but not both.) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* () Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 657.8899999999999864 Td
+(Output:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0.502 0. rg
+30. 645.8899999999999864 Td
+(Model loaded successfully.) Tj
+T* () Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 625.8899999999999864 Td
+(Output:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0.502 0. rg
+30. 613.8899999999999864 Td
+(Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* (Both `max_new_tokens` \(=128\) and `max_length`\(=2048\) seem to have been set. `max_new_tokens` will take precedence. Please refer to the) Tj
+T* (documentation for more information. \(https://huggingface.co/docs/transformers/main/en/main_classes/text_generation\)) Tj
+T* () Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.392 g
+30. 323.8899999999999864 Td
+(Output:) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0. 0.502 0. rg
+30. 311.8899999999999864 Td
+(Experiment completed.) Tj
+T* (    id       prompt_type  true_answer  predicted_answer  is_correct) Tj
+T* (0    0         Zero-shot           18             120.0       False) Tj
+T* (1    0          Few-shot           18              24.0       False) Tj
+T* (2    0  Chain-of-Thought           18              50.0       False) Tj
+T* (3    1         Zero-shot            3               2.0       False) Tj
+T* (4    1          Few-shot            3             100.0       False) Tj
+T* (5    1  Chain-of-Thought            3               3.0        True) Tj
+T* (6    2         Zero-shot        70000           15000.0       False) Tj
+T* (7    2          Few-shot        70000           15000.0       False) Tj
+T* (8    2  Chain-of-Thought        70000             150.0       False) Tj
+T* (9    3         Zero-shot          540            1800.0       False) Tj
+T* (10   3          Few-shot          540             150.0       False) Tj
+T* (11   3  Chain-of-Thought          540               3.0       False) Tj
+T* (12   4         Zero-shot           20              10.0       False) Tj
+T* (13   4          Few-shot           20             500.0       False) Tj
+T* (14   4  Chain-of-Thought           20              40.0       False) Tj
+T* () Tj
+T* (Accuracy Table:) Tj
+T* (         Prompt Type  Accuracy \(%\)) Tj
+T* (0  Chain-of-Thought          20.0) Tj
+T* (1          Few-shot           0.0) Tj
+T* (2         Zero-shot           0.0) Tj
+T* () Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R 5 0 R ]
+/Count 2
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+19 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+20 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 7 0 R
+/F2 8 0 R
+/F3 9 0 R
+/F4 10 0 R
+/F5 11 0 R
+/F6 12 0 R
+/F7 13 0 R
+/F8 14 0 R
+/F9 15 0 R
+/F10 16 0 R
+/F11 17 0 R
+/F12 18 0 R
+/F13 19 0 R
+/F14 20 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+21 0 obj
+<<
+/Producer (jsPDF 2.3.1)
+/CreationDate (D:20260423152010+05'30')
+>>
+endobj
+22 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000012620 00000 n 
+0000014445 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000004999 00000 n 
+0000005136 00000 n 
+0000012683 00000 n 
+0000012808 00000 n 
+0000012938 00000 n 
+0000013071 00000 n 
+0000013209 00000 n 
+0000013333 00000 n 
+0000013462 00000 n 
+0000013594 00000 n 
+0000013730 00000 n 
+0000013858 00000 n 
+0000013985 00000 n 
+0000014114 00000 n 
+0000014247 00000 n 
+0000014349 00000 n 
+0000014695 00000 n 
+0000014781 00000 n 
+trailer
+<<
+/Size 23
+/Root 22 0 R
+/Info 21 0 R
+/ID [ <79257A87C6C8AF07A7EEC656C419191A> <79257A87C6C8AF07A7EEC656C419191A> ]
+>>
+startxref
+14885
+%%EOF
